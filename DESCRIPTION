@@ -1,0 +1,17 @@
+Package: SBgamlss
+Type: Package
+Title: Simplex Binomial Family for GAMLSS
+Version: 0.1.0
+Authors@R: 
+    person("Kevin", "Gargate", email = "gargate.kevin@pucp.pe", role = c("aut", "cre"))
+Description: Simplex Binomial (SB) distribution and GAMLSS family implementation.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports:
+    gamlss,
+    gamlss.dist,
+    numDeriv,
+    stats,
+    Rcpp
+LinkingTo: Rcpp
