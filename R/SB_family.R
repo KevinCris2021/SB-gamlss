@@ -95,8 +95,8 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
 
     ## Iniciales y dominios
     mu.initial = expression({
-  bd0 <- if (exists("bd")) bd else if (exists("m")) m else stop("No se encontró 'bd' (o 'm') para inicializar mu.")
-  mu  <- pmin(pmax((y + 0.5)/(bd0 + 1), 1e-6), 1 - 1e-6)}),
+  mu <- rep(mean((y + 0.5)/(max(y) + 1), na.rm = TRUE), length(y))
+  mu <- pmin(pmax(mu, 1e-6), 1 - 1e-6)}),
     sigma.initial = expression({ sigma <- rep(0.7, length(y)) }),
     mu.valid      = function(mu)    all(mu>0 & mu<1),
     sigma.valid   = function(sigma) all(sigma>0),
