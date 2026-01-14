@@ -1,5 +1,24 @@
 MIT License
 
+Package: SBgamlss
+Type: Package
+Title: Simplex-Binomial family for GAMLSS
+Version: 0.0.1
+Author: Kevin Gargate
+Maintainer: Kevin Gargate <gargate.kevin@pucp.pe>
+Description: Implements the Simplex-Binomial distribution (SB) and a GAMLSS family.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports:
+    gamlss,
+    gamlss.dist,
+    numDeriv,
+    stats
+LinkingTo: Rcpp
+ImportsFrom: Rcpp
+NeedsCompilation: yes
+
 Copyright (c) 2026 KevinCris2021
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
