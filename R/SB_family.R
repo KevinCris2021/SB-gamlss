@@ -137,8 +137,11 @@ rqres = expression({
 
     ## Iniciales y dominios
   mu.initial = expression({
-    mu <- pmin(pmax((y + 0.5) / (bd + 1), 1e-6), 1 - 1e-6)
+    # si bd existe y calza con y, úsalo; si no, usa un bd "seguro"
+    bd0 <- if (exists("bd", inherits = TRUE) && length(bd) == length(y)) bd else rep(max(y, na.rm = TRUE), length(y))
+    mu  <- pmin(pmax((y + 0.5) / (bd0 + 1), 1e-6), 1 - 1e-6)
   }),
+
 
 
     sigma.initial = expression({ sigma <- rep(0.7, length(y)) }),
