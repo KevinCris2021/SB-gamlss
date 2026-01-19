@@ -2,8 +2,8 @@
 #' @export
 SB <- function(mu.link = "logit", sigma.link = "log") {
 
-  if (!exists("dSB", mode = "function")) stop("dSB() no está disponible en el paquete.")
-  if (!exists("pSB", mode = "function")) stop("pSB() no está disponible en el paquete.")
+  if (!exists("dSB", mode = "function")) stop("dSB() no está disponible.")
+  if (!exists("pSB", mode = "function")) stop("pSB() no está disponible.")
 
   mstats <- gamlss.dist::checklink("mu.link", "SB", substitute(mu.link),
                                    c("logit","probit","cloglog","log","own"))
@@ -13,33 +13,9 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
   mu.link    <- as.character(substitute(mu.link))
   sigma.link <- as.character(substitute(sigma.link))
 
-  # -------------------------
-  # Helpers INTERNOS (clave)
-  # -------------------------
-  get_bd <- function(...) {
-    dots <- list(...)
-    if (!is.null(dots$bd)) return(dots$bd)
-    if (!is.null(dots$m))  return(dots$m)
-    stop("No se encontró 'bd' (o 'm'). Pasa gamlss(..., bd = <vector>).")
-  }
-
   clip_mu <- function(mu) pmin(pmax(mu, 1e-12), 1 - 1e-12)
   clip_sg <- function(sg) pmax(sg, 1e-12)
 
-  recycle_all <- function(y, mu, sigma, bd) {
-    n <- length(y)
-    if (is.null(bd)) bd <- rep(max(y, na.rm = TRUE), n)
-    list(
-      y     = y,
-      mu    = rep(mu,    length.out = n),
-      sigma = rep(sigma, length.out = n),
-      bd    = rep(bd,    length.out = n)
-    )
-  }
-
-  # -------------------------
-  # Family object
-  # -------------------------
   fam <- list(
     family     = c("SB","Simplex Binomial"),
     parameters = list(mu=TRUE, sigma=TRUE),
@@ -57,13 +33,21 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
     sigma.linkinv = function(eta)   dstats$linkinv(eta),
     sigma.dr      = function(eta)   dstats$mu.eta(eta),
 
-    # --- Derivadas numéricas (robustas y consistentes)
+    # -------------------------
+    # Derivadas numéricas
+    # -------------------------
     dldm = function(y, mu, sigma, ...) {
-      bd <- get_bd(...)
-      rr <- recycle_all(y, mu, sigma, bd)
-      y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
+      dots <- list(...)
+      bd <- dots$bd
+      if (is.null(bd)) bd <- dots$m
+      if (is.null(bd)) stop("Pasa gamlss(..., bd = <vector>).")
 
-      vapply(seq_along(y), function(i){
+      n <- length(y)
+      mu <- rep(mu, length.out = n)
+      sigma <- rep(sigma, length.out = n)
+      bd <- rep(bd, length.out = n)
+
+      vapply(seq_len(n), function(i){
         yi <- y[i]; bd_i <- bd[i]
         mu_i <- clip_mu(mu[i])
         sg_i <- clip_sg(sigma[i])
@@ -76,11 +60,17 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
     },
 
     d2ldm2 = function(y, mu, sigma, ...) {
-      bd <- get_bd(...)
-      rr <- recycle_all(y, mu, sigma, bd)
-      y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
+      dots <- list(...)
+      bd <- dots$bd
+      if (is.null(bd)) bd <- dots$m
+      if (is.null(bd)) stop("Pasa gamlss(..., bd = <vector>).")
 
-      vapply(seq_along(y), function(i){
+      n <- length(y)
+      mu <- rep(mu, length.out = n)
+      sigma <- rep(sigma, length.out = n)
+      bd <- rep(bd, length.out = n)
+
+      vapply(seq_len(n), function(i){
         yi <- y[i]; bd_i <- bd[i]
         mu_i <- clip_mu(mu[i])
         sg_i <- clip_sg(sigma[i])
@@ -93,11 +83,17 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
     },
 
     dldd = function(y, mu, sigma, ...) {
-      bd <- get_bd(...)
-      rr <- recycle_all(y, mu, sigma, bd)
-      y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
+      dots <- list(...)
+      bd <- dots$bd
+      if (is.null(bd)) bd <- dots$m
+      if (is.null(bd)) stop("Pasa gamlss(..., bd = <vector>).")
 
-      vapply(seq_along(y), function(i){
+      n <- length(y)
+      mu <- rep(mu, length.out = n)
+      sigma <- rep(sigma, length.out = n)
+      bd <- rep(bd, length.out = n)
+
+      vapply(seq_len(n), function(i){
         yi <- y[i]; bd_i <- bd[i]
         mu_i <- clip_mu(mu[i])
         sg_i <- clip_sg(sigma[i])
@@ -110,11 +106,17 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
     },
 
     d2ldd2 = function(y, mu, sigma, ...) {
-      bd <- get_bd(...)
-      rr <- recycle_all(y, mu, sigma, bd)
-      y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
+      dots <- list(...)
+      bd <- dots$bd
+      if (is.null(bd)) bd <- dots$m
+      if (is.null(bd)) stop("Pasa gamlss(..., bd = <vector>).")
 
-      vapply(seq_along(y), function(i){
+      n <- length(y)
+      mu <- rep(mu, length.out = n)
+      sigma <- rep(sigma, length.out = n)
+      bd <- rep(bd, length.out = n)
+
+      vapply(seq_len(n), function(i){
         yi <- y[i]; bd_i <- bd[i]
         mu_i <- clip_mu(mu[i])
         sg_i <- clip_sg(sigma[i])
@@ -127,11 +129,17 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
     },
 
     d2ldmdd = function(y, mu, sigma, ...) {
-      bd <- get_bd(...)
-      rr <- recycle_all(y, mu, sigma, bd)
-      y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
+      dots <- list(...)
+      bd <- dots$bd
+      if (is.null(bd)) bd <- dots$m
+      if (is.null(bd)) stop("Pasa gamlss(..., bd = <vector>).")
 
-      vapply(seq_along(y), function(i){
+      n <- length(y)
+      mu <- rep(mu, length.out = n)
+      sigma <- rep(sigma, length.out = n)
+      bd <- rep(bd, length.out = n)
+
+      vapply(seq_len(n), function(i){
         yi <- y[i]; bd_i <- bd[i]
         mu_i <- clip_mu(mu[i])
         sg_i <- clip_sg(sigma[i])
@@ -142,23 +150,27 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
           as.numeric(dSB(yi, mu = m, sigma = s, bd = bd_i, log = TRUE))
         }, c(mu_i, sg_i))
 
-        as.numeric(H[1,2])
+        as.numeric(H[1, 2])
       }, 0.0)
     },
 
-    # --- Devianza incremental
     G.dev.incr = function(y, mu, sigma, ...) {
-      bd <- get_bd(...)
-      rr <- recycle_all(y, mu, sigma, bd)
-      y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
+      dots <- list(...)
+      bd <- dots$bd
+      if (is.null(bd)) bd <- dots$m
+      if (is.null(bd)) stop("Pasa gamlss(..., bd = <vector>).")
 
-      -2 * vapply(seq_along(y), function(i){
+      n <- length(y)
+      mu <- rep(mu, length.out = n)
+      sigma <- rep(sigma, length.out = n)
+      bd <- rep(bd, length.out = n)
+
+      -2 * vapply(seq_len(n), function(i){
         as.numeric(dSB(y[i], mu = clip_mu(mu[i]), sigma = clip_sg(sigma[i]),
                       bd = bd[i], log = TRUE))
       }, 0.0)
     },
 
-    # --- RQR (rqres la evalúa dentro de gamlss con variables y,mu,sigma,bd)
     rqres = expression({
       u1 <- pSB(y,     mu = mu, sigma = sigma, bd = bd)
       u0 <- pSB(y - 1, mu = mu, sigma = sigma, bd = bd)
@@ -167,7 +179,6 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
       qnorm(u)
     }),
 
-    # --- Iniciales
     mu.initial = expression({
       n <- length(y)
       bd0 <- if (exists("bd", inherits = TRUE)) bd else NULL
