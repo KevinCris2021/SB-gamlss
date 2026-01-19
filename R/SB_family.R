@@ -1,6 +1,8 @@
 SB <- function(mu.link = "logit", sigma.link = "log") {
 
-  # helpers LOCALES: nunca fallan por scoping
+  # =========================
+  # Helpers LOCALES (capturados por closure)
+  # =========================
   get_bd <- function(...) {
     dots <- list(...)
     if (!is.null(dots$bd)) return(dots$bd)
@@ -12,17 +14,19 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
     n <- length(y)
     if (is.null(bd)) bd <- rep(max(y, na.rm = TRUE), n)
     list(
-      y = y,
-      mu = rep(mu, length.out = n),
+      y     = y,
+      mu    = rep(mu,    length.out = n),
       sigma = rep(sigma, length.out = n),
-      bd = rep(bd, length.out = n)
+      bd    = rep(bd,    length.out = n)
     )
   }
 
   clip_mu <- function(mu) pmin(pmax(mu, 1e-12), 1 - 1e-12)
   clip_sg <- function(sg) pmax(sg, 1e-12)
 
-  # checklinks
+  # =========================
+  # Links (GAMLSS)
+  # =========================
   mstats <- gamlss.dist::checklink("mu.link","SB",substitute(mu.link),
                                   c("logit","probit","cloglog","log","own"))
   dstats <- gamlss.dist::checklink("sigma.link","SB",substitute(sigma.link),
@@ -33,8 +37,9 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
 
   fam <- list(
     family     = c("SB","Simplex Binomial"),
-    parameters = list(mu=TRUE, sigma=TRUE),
-    nopar      = 2, type = "Discrete",
+    parameters = list(mu = TRUE, sigma = TRUE),
+    nopar      = 2,
+    type       = "Discrete",
 
     mu.link    = mu.link,
     sigma.link = sigma.link,
@@ -47,6 +52,9 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
     sigma.linkinv = function(eta)   dstats$linkinv(eta),
     sigma.dr      = function(eta)   dstats$mu.eta(eta),
 
+    # -------------------------
+    # Derivadas numéricas
+    # -------------------------
     dldm = function(y, mu, sigma, ...) {
       bd <- get_bd(...)
       rr <- recycle_all(y, mu, sigma, bd)
@@ -131,7 +139,7 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
           as.numeric(dSB(yi, mu = m, sigma = s, bd = bd_i, log = TRUE))
         }, c(mu_i, sg_i))
 
-        as.numeric(H[1,2])
+        as.numeric(H[1, 2])
       }, 0.0)
     },
 
@@ -141,8 +149,13 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
       y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
 
       -2 * vapply(seq_along(y), function(i){
-        as.numeric(dSB(y[i], mu = clip_mu(mu[i]), sigma = clip_sg(sigma[i]),
-                      bd = bd[i], log = TRUE))
+        as.numeric(dSB(
+          y[i],
+          mu    = clip_mu(mu[i]),
+          sigma = clip_sg(sigma[i]),
+          bd    = bd[i],
+          log   = TRUE
+        ))
       }, 0.0)
     },
 
@@ -163,11 +176,12 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
     }),
 
     sigma.initial = expression({ sigma <- rep(0.7, length(y)) }),
-    mu.valid      = function(mu)    all(mu>0 & mu<1),
-    sigma.valid   = function(sigma) all(sigma>0),
-    y.valid       = function(y)     all(y>=0)
+
+    mu.valid    = function(mu)    all(mu > 0 & mu < 1),
+    sigma.valid = function(sigma) all(sigma > 0),
+    y.valid     = function(y)     all(y >= 0)
   )
 
-  class(fam) <- c("gamlss.family","family")
+  class(fam) <- c("gamlss.family", "family")
   fam
 }
