@@ -1,5 +1,4 @@
-useDynLib(SBgamlss, .registration = TRUE)
-importFrom(Rcpp, sourceCpp)
+useDynLib(SBgamlss)
 import(gamlss)
 import(gamlss.dist)
 import(numDeriv)
