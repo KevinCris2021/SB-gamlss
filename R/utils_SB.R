@@ -1,4 +1,4 @@
-# Helpers internos para el family SB (no exportar)
+# Helpers internos para el family SB (NO exportar)
 
 .get_bd_sb <- function(...) {
   dots <- list(...)
@@ -10,6 +10,7 @@
 .recycle_sb <- function(y, mu, sigma, bd) {
   n <- length(y)
 
+  # bd puede venir NULL o escalar
   if (is.null(bd)) bd <- rep(max(y, na.rm = TRUE), n)
 
   list(
@@ -22,3 +23,4 @@
 
 .clip_mu <- function(mu) pmin(pmax(mu, 1e-12), 1 - 1e-12)
 .clip_sg <- function(sg) pmax(sg, 1e-12)
+
