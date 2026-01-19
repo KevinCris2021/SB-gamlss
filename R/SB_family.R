@@ -1,17 +1,14 @@
+.get_bd_sb <- function(...) {
+  dots <- list(...)
+
+  if (!is.null(dots$bd)) return(dots$bd)
+  if (!is.null(dots$m))  return(dots$m)
+
+  stop("No se encontró 'bd' (o 'm'). Pasa gamlss(..., bd = <vector>)")
+}
+
+
 SB <- function(mu.link = "logit", sigma.link = "log") {
-    .get_bd_sb <- function(...) {
-    dots <- list(...)
-    if (!is.null(dots$bd)) return(dots$bd)
-    if (!is.null(dots$m))  return(dots$m)
-
-    # fallback opcional (si quieres)
-    if (exists("bd", inherits = TRUE)) return(get("bd", inherits = TRUE))
-    if (exists("m",  inherits = TRUE)) return(get("m",  inherits = TRUE))
-
-    stop("No se encontró 'bd' (o 'm'). Pasa gamlss(..., bd = <vector>) o define bd/m en el entorno.")
-  }
-
-  # --- acá sigue TU código actual tal cual ---
   if (!exists("dSB")) stop("Define primero dSB() (wrapper a tu dsb_vec).")
   if (!exists("pSB")) stop("Define primero pSB().")
 
