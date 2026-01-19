@@ -1,13 +1,12 @@
-useDynLib(SBgamlss)
-import(gamlss)
+useDynLib(SBgamlss, .registration=TRUE)
+
+import(stats)
 import(gamlss.dist)
 import(numDeriv)
-import(stats)
 
 export(SB)
-export(dsb_vec)
 export(dSB)
 export(pSB)
 export(qSB)
 export(rSB)
-export(cpp_joint_sb)
+
