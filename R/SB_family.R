@@ -9,10 +9,7 @@
 
 
 SB <- function(mu.link = "logit", sigma.link = "log") {
-  if (!exists("dSB")) stop("Define primero dSB() (wrapper a tu dsb_vec).")
-  if (!exists("pSB")) stop("Define primero pSB().")
 
-  
   if (!exists("dSB")) stop("Define primero dSB() (wrapper a tu dsb_vec).")
   if (!exists("pSB")) stop("Define primero pSB().")
 
@@ -130,12 +127,10 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
 
 
     ## Iniciales y dominios
-    mu.initial = expression({
-  bd0 <- SBgamlss::.get_bd_sb(...)
-  mu  <- pmin(pmax((y + 0.5) / (bd0 + 1), 1e-6), 1 - 1e-6)
-}),
-
-
+  mu.initial = expression({
+    bd0 <- data$bd
+    mu  <- pmin(pmax((y + 0.5) / (bd0 + 1), 1e-6), 1 - 1e-6)
+  }),
 
     sigma.initial = expression({ sigma <- rep(0.7, length(y)) }),
     mu.valid      = function(mu)    all(mu>0 & mu<1),
