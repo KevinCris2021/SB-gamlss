@@ -118,20 +118,7 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
 
 
     ## RQR: usa el nombre "pSB" (rqres la resuelve por nombre)
-rqres = expression({
-  # Randomized quantile residuals for discrete Y
-  u1 <- pSB(y,     mu = mu, sigma = sigma, bd = bd, lower.tail = TRUE, log.p = FALSE)
-  u0 <- pSB(y - 1, mu = mu, sigma = sigma, bd = bd, lower.tail = TRUE, log.p = FALSE)
-
-  # Uniformización: U ~ Unif(F(y-1), F(y))
-  u  <- u0 + runif(length(y)) * (u1 - u0)
-
-  # Guardas numéricas
-  u  <- pmin(pmax(u, 1e-12), 1 - 1e-12)
-
-  # Residuo cuantilico randomizado
-  qnorm(u)
-}),
+rqres = expression( rqres(pfun = "pSB", type = "Discrete", ymin = 0, y = y, mu = mu, sigma = sigma, bd = bd) ),
 
 
     ## Iniciales y dominios
