@@ -54,83 +54,104 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
 
 
     ## Derivadas numéricas consistentes con dSB()
-    dldm = function(y, mu, sigma, ...) {
+dldm = function(y, mu, sigma, ...) {
   bd <- .get_bd_sb(...)
+  rr <- .recycle_sb(y, mu, sigma, bd)
+  y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
+
   vapply(seq_along(y), function(i){
-    mu_i <- pmin(pmax(mu[i], 1e-12), 1-1e-12)
-    sg_i <- pmax(sigma[i], 1e-12)
-    bd_i <- bd[i]; yi <- y[i]
+    yi <- y[i]; bd_i <- bd[i]
+    mu_i <- .clip_mu(mu[i])
+    sg_i <- .clip_sg(sigma[i])
+
     numDeriv::grad(function(m){
-      m <- pmin(pmax(m, 1e-12), 1-1e-12)
+      m <- .clip_mu(m)
       as.numeric(dSB(yi, mu = m, sigma = sg_i, bd = bd_i, log = TRUE))
     }, mu_i)
   }, 0.0)
 },
 
-    d2ldm2 = function(y, mu, sigma, ...) {
+d2ldm2 = function(y, mu, sigma, ...) {
   bd <- .get_bd_sb(...)
+  rr <- .recycle_sb(y, mu, sigma, bd)
+  y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
+
   vapply(seq_along(y), function(i){
-    mu_i <- pmin(pmax(mu[i], 1e-12), 1-1e-12)
-    sg_i <- pmax(sigma[i], 1e-12)
-    bd_i <- bd[i]; yi <- y[i]
+    yi <- y[i]; bd_i <- bd[i]
+    mu_i <- .clip_mu(mu[i])
+    sg_i <- .clip_sg(sigma[i])
+
     as.numeric(numDeriv::hessian(function(m){
-      m <- pmin(pmax(m, 1e-12), 1-1e-12)
+      m <- .clip_mu(m)
       as.numeric(dSB(yi, mu = m, sigma = sg_i, bd = bd_i, log = TRUE))
     }, mu_i))
   }, 0.0)
 },
 
-    dldd = function(y, mu, sigma, ...) {
+dldd = function(y, mu, sigma, ...) {
   bd <- .get_bd_sb(...)
+  rr <- .recycle_sb(y, mu, sigma, bd)
+  y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
+
   vapply(seq_along(y), function(i){
-    mu_i <- pmin(pmax(mu[i], 1e-12), 1-1e-12)
-    sg_i <- pmax(sigma[i], 1e-12)
-    bd_i <- bd[i]; yi <- y[i]
+    yi <- y[i]; bd_i <- bd[i]
+    mu_i <- .clip_mu(mu[i])
+    sg_i <- .clip_sg(sigma[i])
+
     numDeriv::grad(function(s){
-      s <- pmax(s, 1e-12)
+      s <- .clip_sg(s)
       as.numeric(dSB(yi, mu = mu_i, sigma = s, bd = bd_i, log = TRUE))
     }, sg_i)
   }, 0.0)
 },
 
-    d2ldd2 = function(y, mu, sigma, ...) {
+d2ldd2 = function(y, mu, sigma, ...) {
   bd <- .get_bd_sb(...)
+  rr <- .recycle_sb(y, mu, sigma, bd)
+  y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
+
   vapply(seq_along(y), function(i){
-    mu_i <- pmin(pmax(mu[i], 1e-12), 1-1e-12)
-    sg_i <- pmax(sigma[i], 1e-12)
-    bd_i <- bd[i]; yi <- y[i]
+    yi <- y[i]; bd_i <- bd[i]
+    mu_i <- .clip_mu(mu[i])
+    sg_i <- .clip_sg(sigma[i])
+
     as.numeric(numDeriv::hessian(function(s){
-      s <- pmax(s, 1e-12)
+      s <- .clip_sg(s)
       as.numeric(dSB(yi, mu = mu_i, sigma = s, bd = bd_i, log = TRUE))
     }, sg_i))
   }, 0.0)
 },
 
-  d2ldmdd = function(y, mu, sigma, ...) {
+d2ldmdd = function(y, mu, sigma, ...) {
   bd <- .get_bd_sb(...)
+  rr <- .recycle_sb(y, mu, sigma, bd)
+  y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
+
   vapply(seq_along(y), function(i){
-    mu_i <- pmin(pmax(mu[i], 1e-12), 1-1e-12)
-    sg_i <- pmax(sigma[i], 1e-12)
-    bd_i <- bd[i]; yi <- y[i]
+    yi <- y[i]; bd_i <- bd[i]
+    mu_i <- .clip_mu(mu[i])
+    sg_i <- .clip_sg(sigma[i])
+
     H <- numDeriv::hessian(function(v){
-      m <- pmin(pmax(v[1], 1e-12), 1-1e-12)
-      s <- pmax(v[2], 1e-12)
+      m <- .clip_mu(v[1])
+      s <- .clip_sg(v[2])
       as.numeric(dSB(yi, mu = m, sigma = s, bd = bd_i, log = TRUE))
     }, c(mu_i, sg_i))
+
     as.numeric(H[1, 2])
   }, 0.0)
 },
 
+G.dev.incr = function(y, mu, sigma, ...) {
+  bd <- .get_bd_sb(...)
+  rr <- .recycle_sb(y, mu, sigma, bd)
+  y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
 
-    ## Devianza coherente: -2 sum log f_i
-      G.dev.incr = function(y, mu, sigma, ...) {
-    bd <- .get_bd_sb(...)
-    -2 * vapply(seq_along(y), function(i){
-      m  <- pmin(pmax(mu[i], 1e-12), 1-1e-12)
-      sg <- pmax(sigma[i], 1e-12)
-      as.numeric(dSB(y[i], mu = m, sigma = sg, bd = bd[i], log = TRUE))
-    }, 0.0)
-  },
+  -2 * vapply(seq_along(y), function(i){
+    yi <- y[i]
+    as.numeric(dSB(yi, mu = .clip_mu(mu[i]), sigma = .clip_sg(sigma[i]), bd = bd[i], log = TRUE))
+  }, 0.0)
+},
 
 
     ## RQR: usa el nombre "pSB" (rqres la resuelve por nombre)
@@ -153,10 +174,18 @@ rqres = expression({
 
     ## Iniciales y dominios
   mu.initial = expression({
-    # si bd existe y calza con y, úsalo; si no, usa un bd "seguro"
-    bd0 <- if (exists("bd", inherits = TRUE) && length(bd) == length(y)) bd else rep(max(y, na.rm = TRUE), length(y))
-    mu  <- pmin(pmax((y + 0.5) / (bd0 + 1), 1e-6), 1 - 1e-6)
-  }),
+  n <- length(y)
+
+  bd0 <- if (exists("bd", inherits = TRUE)) bd else NULL
+  if (is.null(bd0) && exists("m", inherits = TRUE)) bd0 <- m
+  if (is.null(bd0)) bd0 <- rep(max(y, na.rm = TRUE), n)
+
+  bd0 <- rep(bd0, length.out = n)
+
+  mu <- (y + 0.5) / (bd0 + 1)
+  mu <- pmin(pmax(mu, 1e-6), 1 - 1e-6)
+}),
+
 
 
 
