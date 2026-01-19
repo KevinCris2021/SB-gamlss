@@ -25,6 +25,10 @@
 
 
 SB <- function(mu.link = "logit", sigma.link = "log") {
+  .recycle_sb <- getFromNamespace(".recycle_sb", "SBgamlss")
+  .get_bd_sb  <- getFromNamespace(".get_bd_sb",  "SBgamlss")
+  .clip_mu    <- getFromNamespace(".clip_mu",    "SBgamlss")
+  .clip_sg    <- getFromNamespace(".clip_sg",    "SBgamlss")
 
   if (!exists("dSB")) stop("Define primero dSB() (wrapper a tu dsb_vec).")
   if (!exists("pSB")) stop("Define primero pSB().")
