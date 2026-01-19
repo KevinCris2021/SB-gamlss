@@ -1,27 +1,21 @@
-# R/SB_family.R
-
 #' Simplex-Binomial family for GAMLSS
-#'
 #' @export
 SB <- function(mu.link = "logit", sigma.link = "log") {
 
-  # ---- requisitos ----
-  if (!exists("dSB", mode = "function")) stop("No existe dSB() en el namespace.")
-  if (!exists("pSB", mode = "function")) stop("No existe pSB() en el namespace.")
+  if (!exists("dSB", mode = "function")) stop("dSB() no está disponible en el paquete.")
+  if (!exists("pSB", mode = "function")) stop("pSB() no está disponible en el paquete.")
 
-  # ---- links (GAMLSS) ----
   mstats <- gamlss.dist::checklink("mu.link", "SB", substitute(mu.link),
-                                  c("logit", "probit", "cloglog", "log", "own"))
+                                   c("logit","probit","cloglog","log","own"))
   dstats <- gamlss.dist::checklink("sigma.link", "SB", substitute(sigma.link),
-                                   c("log", "identity", "inverse"))
+                                   c("log","identity","inverse"))
 
   mu.link    <- as.character(substitute(mu.link))
   sigma.link <- as.character(substitute(sigma.link))
 
-  # ============================================================
-  # Helpers internos (NO dependen de nada externo)
-  # ============================================================
-
+  # -------------------------
+  # Helpers INTERNOS (clave)
+  # -------------------------
   get_bd <- function(...) {
     dots <- list(...)
     if (!is.null(dots$bd)) return(dots$bd)
@@ -43,47 +37,40 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
     )
   }
 
-  # para evitar búsquedas raras, fijamos punteros a las funciones
-  dSB_fun <- dSB
-  pSB_fun <- pSB
-
-  # ============================================================
+  # -------------------------
   # Family object
-  # ============================================================
-
+  # -------------------------
   fam <- list(
-    family     = c("SB", "Simplex Binomial"),
-    parameters = list(mu = TRUE, sigma = TRUE),
+    family     = c("SB","Simplex Binomial"),
+    parameters = list(mu=TRUE, sigma=TRUE),
     nopar      = 2,
     type       = "Discrete",
 
-    mu.link       = mu.link,
-    sigma.link    = sigma.link,
+    mu.link    = mu.link,
+    sigma.link = sigma.link,
 
-    mu.linkfun    = function(mu)  mstats$linkfun(mu),
-    mu.linkinv    = function(eta) mstats$linkinv(eta),
-    mu.dr         = function(eta) mstats$mu.eta(eta),
+    mu.linkfun = function(mu)  mstats$linkfun(mu),
+    mu.linkinv = function(eta) mstats$linkinv(eta),
+    mu.dr      = function(eta) mstats$mu.eta(eta),
 
-    sigma.linkfun = function(s)   dstats$linkfun(s),
-    sigma.linkinv = function(eta) dstats$linkinv(eta),
-    sigma.dr      = function(eta) dstats$mu.eta(eta),
+    sigma.linkfun = function(sigma) dstats$linkfun(sigma),
+    sigma.linkinv = function(eta)   dstats$linkinv(eta),
+    sigma.dr      = function(eta)   dstats$mu.eta(eta),
 
-    # ------------------------------------------------------------
-    # Derivadas numéricas (consistentes con dSB_fun)
-    # ------------------------------------------------------------
+    # --- Derivadas numéricas (robustas y consistentes)
     dldm = function(y, mu, sigma, ...) {
       bd <- get_bd(...)
       rr <- recycle_all(y, mu, sigma, bd)
       y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
 
-      vapply(seq_along(y), function(i) {
-        yi <- y[i]; bdi <- bd[i]
+      vapply(seq_along(y), function(i){
+        yi <- y[i]; bd_i <- bd[i]
         mu_i <- clip_mu(mu[i])
         sg_i <- clip_sg(sigma[i])
 
-        numDeriv::grad(function(m) {
+        numDeriv::grad(function(m){
           m <- clip_mu(m)
-          as.numeric(dSB_fun(yi, mu = m, sigma = sg_i, bd = bdi, log = TRUE))
+          as.numeric(dSB(yi, mu = m, sigma = sg_i, bd = bd_i, log = TRUE))
         }, mu_i)
       }, 0.0)
     },
@@ -93,14 +80,14 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
       rr <- recycle_all(y, mu, sigma, bd)
       y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
 
-      vapply(seq_along(y), function(i) {
-        yi <- y[i]; bdi <- bd[i]
+      vapply(seq_along(y), function(i){
+        yi <- y[i]; bd_i <- bd[i]
         mu_i <- clip_mu(mu[i])
         sg_i <- clip_sg(sigma[i])
 
-        as.numeric(numDeriv::hessian(function(m) {
+        as.numeric(numDeriv::hessian(function(m){
           m <- clip_mu(m)
-          as.numeric(dSB_fun(yi, mu = m, sigma = sg_i, bd = bdi, log = TRUE))
+          as.numeric(dSB(yi, mu = m, sigma = sg_i, bd = bd_i, log = TRUE))
         }, mu_i))
       }, 0.0)
     },
@@ -110,14 +97,14 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
       rr <- recycle_all(y, mu, sigma, bd)
       y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
 
-      vapply(seq_along(y), function(i) {
-        yi <- y[i]; bdi <- bd[i]
+      vapply(seq_along(y), function(i){
+        yi <- y[i]; bd_i <- bd[i]
         mu_i <- clip_mu(mu[i])
         sg_i <- clip_sg(sigma[i])
 
-        numDeriv::grad(function(s) {
+        numDeriv::grad(function(s){
           s <- clip_sg(s)
-          as.numeric(dSB_fun(yi, mu = mu_i, sigma = s, bd = bdi, log = TRUE))
+          as.numeric(dSB(yi, mu = mu_i, sigma = s, bd = bd_i, log = TRUE))
         }, sg_i)
       }, 0.0)
     },
@@ -127,14 +114,14 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
       rr <- recycle_all(y, mu, sigma, bd)
       y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
 
-      vapply(seq_along(y), function(i) {
-        yi <- y[i]; bdi <- bd[i]
+      vapply(seq_along(y), function(i){
+        yi <- y[i]; bd_i <- bd[i]
         mu_i <- clip_mu(mu[i])
         sg_i <- clip_sg(sigma[i])
 
-        as.numeric(numDeriv::hessian(function(s) {
+        as.numeric(numDeriv::hessian(function(s){
           s <- clip_sg(s)
-          as.numeric(dSB_fun(yi, mu = mu_i, sigma = s, bd = bdi, log = TRUE))
+          as.numeric(dSB(yi, mu = mu_i, sigma = s, bd = bd_i, log = TRUE))
         }, sg_i))
       }, 0.0)
     },
@@ -144,49 +131,43 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
       rr <- recycle_all(y, mu, sigma, bd)
       y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
 
-      vapply(seq_along(y), function(i) {
-        yi <- y[i]; bdi <- bd[i]
+      vapply(seq_along(y), function(i){
+        yi <- y[i]; bd_i <- bd[i]
         mu_i <- clip_mu(mu[i])
         sg_i <- clip_sg(sigma[i])
 
-        H <- numDeriv::hessian(function(v) {
+        H <- numDeriv::hessian(function(v){
           m <- clip_mu(v[1])
           s <- clip_sg(v[2])
-          as.numeric(dSB_fun(yi, mu = m, sigma = s, bd = bdi, log = TRUE))
+          as.numeric(dSB(yi, mu = m, sigma = s, bd = bd_i, log = TRUE))
         }, c(mu_i, sg_i))
 
-        as.numeric(H[1, 2])
+        as.numeric(H[1,2])
       }, 0.0)
     },
 
-    # ------------------------------------------------------------
-    # Devianza incremental
-    # ------------------------------------------------------------
+    # --- Devianza incremental
     G.dev.incr = function(y, mu, sigma, ...) {
       bd <- get_bd(...)
       rr <- recycle_all(y, mu, sigma, bd)
       y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
 
-      -2 * vapply(seq_along(y), function(i) {
-        as.numeric(dSB_fun(y[i], mu = clip_mu(mu[i]), sigma = clip_sg(sigma[i]),
-                           bd = bd[i], log = TRUE))
+      -2 * vapply(seq_along(y), function(i){
+        as.numeric(dSB(y[i], mu = clip_mu(mu[i]), sigma = clip_sg(sigma[i]),
+                      bd = bd[i], log = TRUE))
       }, 0.0)
     },
 
-    # ------------------------------------------------------------
-    # RQR (rqres)
-    # ------------------------------------------------------------
+    # --- RQR (rqres la evalúa dentro de gamlss con variables y,mu,sigma,bd)
     rqres = expression({
-      u1 <- pSB_fun(y,     mu = mu, sigma = sigma, bd = bd, lower.tail = TRUE, log.p = FALSE)
-      u0 <- pSB_fun(y - 1, mu = mu, sigma = sigma, bd = bd, lower.tail = TRUE, log.p = FALSE)
+      u1 <- pSB(y,     mu = mu, sigma = sigma, bd = bd)
+      u0 <- pSB(y - 1, mu = mu, sigma = sigma, bd = bd)
       u  <- u0 + runif(length(y)) * (u1 - u0)
       u  <- pmin(pmax(u, 1e-12), 1 - 1e-12)
       qnorm(u)
     }),
 
-/*    # ------------------------------------------------------------
-    # Iniciales
-    # ------------------------------------------------------------*/
+    # --- Iniciales
     mu.initial = expression({
       n <- length(y)
       bd0 <- if (exists("bd", inherits = TRUE)) bd else NULL
@@ -199,14 +180,11 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
 
     sigma.initial = expression({ sigma <- rep(0.7, length(y)) }),
 
-/*    # ------------------------------------------------------------
-    # Validaciones
-    # ------------------------------------------------------------*/
     mu.valid    = function(mu)    all(mu > 0 & mu < 1),
     sigma.valid = function(sigma) all(sigma > 0),
     y.valid     = function(y)     all(y >= 0)
   )
 
-  class(fam) <- c("gamlss.family", "family")
+  class(fam) <- c("gamlss.family","family")
   fam
 }
