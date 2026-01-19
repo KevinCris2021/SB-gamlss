@@ -1,26 +1,23 @@
 # R/SB_family.R
-# Simplex-Binomial family for GAMLSS
-# (c) SBgamlss
 
+#' Internal helper: extract bd (or m) from ...
+#' @keywords internal
+.get_bd_sb <- function(...) {
+  dots <- list(...)
+  if (!is.null(dots$bd)) return(dots$bd)
+  if (!is.null(dots$m))  return(dots$m)
+  stop("No se encontró 'bd' (o 'm'). Pasa gamlss(..., bd = <vector>)")
+}
+
+#' Simplex-Binomial family for GAMLSS
+#' @export
 SB <- function(mu.link = "logit", sigma.link = "log") {
 
-  # -----------------------------
-  # Dependencias mínimas
-  # -----------------------------
-  if (!exists("dSB", mode = "function")) stop("No encuentro dSB(). ¿Está cargado/instalado SBgamlss correctamente?")
-  if (!exists("pSB", mode = "function")) stop("No encuentro pSB(). ¿Está cargado/instalado SBgamlss correctamente?")
-  if (!requireNamespace("gamlss.dist", quietly = TRUE)) stop("Falta 'gamlss.dist'")
-  if (!requireNamespace("numDeriv", quietly = TRUE)) stop("Falta 'numDeriv'")
+  if (!exists("dSB", mode = "function")) stop("No encuentro dSB().")
+  if (!exists("pSB", mode = "function")) stop("No encuentro pSB().")
 
-  # -----------------------------
-  # Helpers LOCALES (clave para evitar errores tipo: get_bd no encontrado)
-  # -----------------------------
-  get_bd <- function(...) {
-    dots <- list(...)
-    if (!is.null(dots$bd)) return(dots$bd)
-    if (!is.null(dots$m))  return(dots$m)
-    stop("No se encontró 'bd' (o 'm'). Pasa gamlss(..., bd = <vector>)")
-  }
+  if (!requireNamespace("gamlss.dist", quietly = TRUE)) stop("Falta 'gamlss.dist'")
+  if (!requireNamespace("numDeriv", quietly = TRUE))    stop("Falta 'numDeriv'")
 
   recycle_all <- function(y, mu, sigma, bd) {
     n <- length(y)
@@ -36,9 +33,6 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
   clip_mu <- function(mu) pmin(pmax(mu, 1e-12), 1 - 1e-12)
   clip_sg <- function(sg) pmax(sg, 1e-12)
 
-  # -----------------------------
-  # Links (GAMLSS)
-  # -----------------------------
   mstats <- gamlss.dist::checklink("mu.link", "SB", substitute(mu.link),
                                   c("logit","probit","cloglog","log","own"))
   dstats <- gamlss.dist::checklink("sigma.link", "SB", substitute(sigma.link),
@@ -64,11 +58,9 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
     sigma.linkinv = function(eta)   dstats$linkinv(eta),
     sigma.dr      = function(eta)   dstats$mu.eta(eta),
 
-    # -----------------------------
-    # Derivadas numéricas (coherentes con dSB(..., log=TRUE))
-    # -----------------------------
+    # --- score wrt mu
     dldm = function(y, mu, sigma, ...) {
-      bd <- get_bd(...)
+      bd <- SBgamlss:::.get_bd_sb(...)
       rr <- recycle_all(y, mu, sigma, bd)
       y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
 
@@ -85,7 +77,7 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
     },
 
     d2ldm2 = function(y, mu, sigma, ...) {
-      bd <- get_bd(...)
+      bd <- SBgamlss:::.get_bd_sb(...)
       rr <- recycle_all(y, mu, sigma, bd)
       y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
 
@@ -101,8 +93,9 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
       }, 0.0)
     },
 
+    # --- score wrt sigma
     dldd = function(y, mu, sigma, ...) {
-      bd <- get_bd(...)
+      bd <- SBgamlss:::.get_bd_sb(...)
       rr <- recycle_all(y, mu, sigma, bd)
       y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
 
@@ -119,7 +112,7 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
     },
 
     d2ldd2 = function(y, mu, sigma, ...) {
-      bd <- get_bd(...)
+      bd <- SBgamlss:::.get_bd_sb(...)
       rr <- recycle_all(y, mu, sigma, bd)
       y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
 
@@ -136,7 +129,7 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
     },
 
     d2ldmdd = function(y, mu, sigma, ...) {
-      bd <- get_bd(...)
+      bd <- SBgamlss:::.get_bd_sb(...)
       rr <- recycle_all(y, mu, sigma, bd)
       y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
 
@@ -155,11 +148,8 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
       }, 0.0)
     },
 
-    # -----------------------------
-    # Devianza incremental
-    # -----------------------------
     G.dev.incr = function(y, mu, sigma, ...) {
-      bd <- get_bd(...)
+      bd <- SBgamlss:::.get_bd_sb(...)
       rr <- recycle_all(y, mu, sigma, bd)
       y <- rr$y; mu <- rr$mu; sigma <- rr$sigma; bd <- rr$bd
 
@@ -172,9 +162,6 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
       }, 0.0)
     },
 
-    # -----------------------------
-    # Randomized quantile residuals
-    # -----------------------------
     rqres = expression({
       u1 <- pSB(y,     mu = mu, sigma = sigma, bd = bd)
       u0 <- pSB(y - 1, mu = mu, sigma = sigma, bd = bd)
@@ -183,9 +170,6 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
       qnorm(u)
     }),
 
-    # -----------------------------
-    # Iniciales y validaciones
-    # -----------------------------
     mu.initial = expression({
       n <- length(y)
       bd0 <- if (exists("bd", inherits = TRUE)) bd else NULL
@@ -197,9 +181,7 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
       mu <- pmin(pmax(mu, 1e-6), 1 - 1e-6)
     }),
 
-    sigma.initial = expression({
-      sigma <- rep(0.7, length(y))
-    }),
+    sigma.initial = expression({ sigma <- rep(0.7, length(y)) }),
 
     mu.valid    = function(mu)    all(mu > 0 & mu < 1),
     sigma.valid = function(sigma) all(sigma > 0),
