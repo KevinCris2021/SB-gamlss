@@ -119,9 +119,10 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
 
     ## RQR: usa el nombre "pSB" (rqres la resuelve por nombre)
   rqres = expression(
-    rqres(pfun = "pSB", type = "Discrete",
-          ymin = 0, y = y, mu = mu, sigma = sigma, bd = bd)
-  )
+    rqres(pfun="pSB", type="Discrete",
+          ymin=0, y=y, mu=mu, sigma=sigma, bd=data$bd)
+  ),
+
 
 
 
