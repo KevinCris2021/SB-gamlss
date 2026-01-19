@@ -122,15 +122,19 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
 
     ## RQR: usa el nombre "pSB" (rqres la resuelve por nombre)
     rqres = expression({
+  bd0 <- SBgamlss::.get_bd_sb(...)
   rqres(pfun = "pSB", type = "Discrete",
-        ymin = 0, y = y, mu = mu, sigma = sigma, bd = bd)
+        ymin = 0, y = y, mu = mu, sigma = sigma, bd = bd0)
 }),
+
 
 
     ## Iniciales y dominios
     mu.initial = expression({
-  mu <- pmin(pmax((y + 0.5) / (bd + 1), 1e-6), 1 - 1e-6)
+  bd0 <- SBgamlss::.get_bd_sb(...)
+  mu  <- pmin(pmax((y + 0.5) / (bd0 + 1), 1e-6), 1 - 1e-6)
 }),
+
 
 
     sigma.initial = expression({ sigma <- rep(0.7, length(y)) }),
