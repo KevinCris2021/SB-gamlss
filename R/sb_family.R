@@ -1,6 +1,6 @@
 # R/sb_family.R
 
-# Helper interno: obtener bd de los ... de gamlss
+# bd de gamlss
 .get_bd_sb <- function(...) {
   dots <- list(...)
 
@@ -34,7 +34,6 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
   sig_cap  <- 50
 
   # --- Pasos fijos para numDeriv (mejor estabilidad) ---
-  # Ajustables si deseas experimentar:
   eps_grad_mu  <- 1e-5
   eps_hess_mu  <- 1e-4
   eps_grad_sig <- 1e-5
@@ -64,7 +63,7 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
       vapply(seq_along(y), function(i){
 
         mu_i <- pmin(pmax(mu[i], eps_mu), 1 - eps_mu)
-        sg_i <- pmin(pmax(sigma[i], eps_sig), sig_cap)   # <<< CAMBIO 1 (cap)
+        sg_i <- pmin(pmax(sigma[i], eps_sig), sig_cap)   
         bd_i <- bd[i]
         yi   <- y[i]
 
@@ -74,7 +73,7 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
             as.numeric(dSB(yi, mu = m, sigma = sg_i, bd = bd_i, log = TRUE))
           },
           mu_i,
-          method.args = list(eps = eps_grad_mu)          # <<< CAMBIO 2 (eps fijo)
+          method.args = list(eps = eps_grad_mu)         
         )
       }, 0.0)
     },
@@ -84,7 +83,7 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
       vapply(seq_along(y), function(i){
 
         mu_i <- pmin(pmax(mu[i], eps_mu), 1 - eps_mu)
-        sg_i <- pmin(pmax(sigma[i], eps_sig), sig_cap)   # <<< CAMBIO 1 (cap)
+        sg_i <- pmin(pmax(sigma[i], eps_sig), sig_cap)   
         bd_i <- bd[i]
         yi   <- y[i]
 
@@ -94,7 +93,7 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
             as.numeric(dSB(yi, mu = m, sigma = sg_i, bd = bd_i, log = TRUE))
           },
           mu_i,
-          method.args = list(eps = eps_hess_mu)          # <<< CAMBIO 2 (eps fijo)
+          method.args = list(eps = eps_hess_mu)          
         ))
       }, 0.0)
     },
@@ -104,7 +103,7 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
       vapply(seq_along(y), function(i){
 
         mu_i <- pmin(pmax(mu[i], eps_mu), 1 - eps_mu)
-        sg_i <- pmin(pmax(sigma[i], eps_sig), sig_cap)   # <<< CAMBIO 1 (cap)
+        sg_i <- pmin(pmax(sigma[i], eps_sig), sig_cap)  
         bd_i <- bd[i]
         yi   <- y[i]
 
@@ -114,7 +113,7 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
             as.numeric(dSB(yi, mu = mu_i, sigma = s, bd = bd_i, log = TRUE))
           },
           sg_i,
-          method.args = list(eps = eps_grad_sig)         # <<< CAMBIO 2 (eps fijo)
+          method.args = list(eps = eps_grad_sig)         
         )
       }, 0.0)
     },
@@ -124,17 +123,17 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
       vapply(seq_along(y), function(i){
 
         mu_i <- pmin(pmax(mu[i], eps_mu), 1 - eps_mu)
-        sg_i <- pmin(pmax(sigma[i], eps_sig), sig_cap)   # <<< CAMBIO 1 (cap)
+        sg_i <- pmin(pmax(sigma[i], eps_sig), sig_cap)   
         bd_i <- bd[i]
         yi   <- y[i]
 
         as.numeric(numDeriv::hessian(
           function(s){
-            s <- pmin(pmax(s, eps_sig), sig_cap)         # <<< CAMBIO 1 (cap)
+            s <- pmin(pmax(s, eps_sig), sig_cap)        
             as.numeric(dSB(yi, mu = mu_i, sigma = s, bd = bd_i, log = TRUE))
           },
           sg_i,
-          method.args = list(eps = eps_hess_sig)         # <<< CAMBIO 2 (eps fijo)
+          method.args = list(eps = eps_hess_sig)        
         ))
       }, 0.0)
     },
@@ -144,18 +143,18 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
       vapply(seq_along(y), function(i){
 
         mu_i <- pmin(pmax(mu[i], eps_mu), 1 - eps_mu)
-        sg_i <- pmin(pmax(sigma[i], eps_sig), sig_cap)   # <<< CAMBIO 1 (cap)
+        sg_i <- pmin(pmax(sigma[i], eps_sig), sig_cap)   
         bd_i <- bd[i]
         yi   <- y[i]
 
         H <- numDeriv::hessian(
           function(v){
             m <- pmin(pmax(v[1], eps_mu), 1 - eps_mu)
-            s <- pmin(pmax(v[2], eps_sig), sig_cap)      # <<< CAMBIO 1 (cap)
+            s <- pmin(pmax(v[2], eps_sig), sig_cap)      
             as.numeric(dSB(yi, mu = m, sigma = s, bd = bd_i, log = TRUE))
           },
           c(mu_i, sg_i),
-          method.args = list(eps = eps_hess_mix)         # <<< CAMBIO 2 (eps fijo)
+          method.args = list(eps = eps_hess_mix)         
         )
 
         as.numeric(H[1, 2])
@@ -163,7 +162,7 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
     },
 
 
-    ## Devianza coherente: -2 sum log f_i
+    ## Devianza:
     G.dev.incr = function(y, mu, sigma, ...) {
       bd <- .get_bd_sb(...)
       -2 * vapply(seq_along(y), function(i){
@@ -173,7 +172,7 @@ SB <- function(mu.link = "logit", sigma.link = "log") {
       }, 0.0)
     },
 
-    ## RQR: usa el nombre "pSB" (rqres la resuelve por nombre)
+    ## RQR:
     rqres = expression({
       rqres(pfun = "pSB", type = "Discrete",
             ymin = 0, y = y, mu = mu, sigma = sigma, bd = bd)
