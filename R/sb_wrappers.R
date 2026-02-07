@@ -1,6 +1,6 @@
 dSB<- function(x, mu = 0.5, sigma = 1, bd = 10, log = FALSE,
                      rel.tol = 1e-8, abs.tol = 0, subdivisions = 200L) {
-  # --- Validaciones básicas ---
+  # --- Validaciones ---
   if (any(!is.finite(mu)) || any(!is.finite(sigma)) || any(!is.finite(bd)))
     stop("mu/sigma/bd must be finite")
   if (any(mu < 0 | mu > 1))  stop("mu must be between 0 and 1")
@@ -31,7 +31,7 @@ dSB<- function(x, mu = 0.5, sigma = 1, bd = 10, log = FALSE,
       val <- max(val, tiny)
       return(if (log) log(val) else val)
     }
-    # integración segura
+    # integración 
     val <- try(integrate(
       function(w) {
         as.numeric(cpp_joint_sb_(w, y_i, n_i, mu_i, phi_i))
@@ -75,7 +75,7 @@ pSB <- function(q, mu = 0.5, sigma = 1, bd = 10, lower.tail = TRUE, log.p = FALS
     # Aproximación binomial cuando la dispersión es pequeña o tiende a cero
     if (si < tiny_phi) return(pbinom(qi, size = bdi, prob = mui))
 
-    # Acumular pmf discreta 0:qi desde tu dSB()
+    # Acumular pmf discreta 0:qi desde dSB()
     pmf <- dSB(0:qi, mu = mui, sigma = si, bd = bdi)
     pmf[!is.finite(pmf) | pmf < 0] <- 0
     out <- sum(pmf)
@@ -128,7 +128,7 @@ pSB <- function(q, mu = 0.5, sigma = 1, bd = 10, lower.tail = TRUE, log.p = FALS
       mid  <- as.integer((lo + hi) %/% 2)
       Fmid <- pSB(mid, mu = mu[i], sigma = sigma[i], bd = bd[i],
                   lower.tail = TRUE, log.p = FALSE)
-      if (!is.finite(Fmid)) Fmid <- 0  # <<< FIX CLAVE
+      if (!is.finite(Fmid)) Fmid <- 0 
 
       if (Fmid + tol >= p[i]) {
         hi <- mid
@@ -186,7 +186,6 @@ rSB <- function(n, mu = 0.5, sigma = 1, bd = 10) {
     }
 
     u <- stats::runif(1L)
-    # ¡ojo! mapeo 0..bd: restar 1L
     q <- findInterval(u, c(0, cdf), left.open = FALSE) - 1L
     if (q < 0L)       q <- 0L
     if (q > bd[j])    q <- bd[j]
